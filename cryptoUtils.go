@@ -8,16 +8,19 @@ import (
 	"encoding/base64"
 	"io"
 	"log"
+	"os"
 
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func CreateAndEncryptVaultKey(password, vaultKey string) (string, string, string) {
+func CreateAndEncryptVaultKey(password string) (string, string, string) {
 	// Generate a salt
 	salt := make([]byte, 16)
 	_, err := rand.Read(salt)
 	if err != nil {
 		log.Fatal(err)
+		os.Exit(1)
+
 	}
 
 	// Derive the key using PBKDF2 (could also use bcrypt or Argon2)
@@ -26,9 +29,17 @@ func CreateAndEncryptVaultKey(password, vaultKey string) (string, string, string
 	// vaultKey for an extra layer of security
 
 	// Encrypt the vault key using AES-GCM
-	encryptedKey, nonce, err := encryptAESGCM([]byte(vaultKey), key)
+	vaultKey, err := generateVaultKey()
 	if err != nil {
 		log.Fatal(err)
+		os.Exit(1)
+
+	}
+	encryptedKey, nonce, err := encryptAESGCM(vaultKey, key)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+
 	}
 
 	// Base64 encode everything for safe storage in JSON
@@ -54,6 +65,49 @@ func DecryptVaultKeyFromPassword(password, encodedSalt, encodedEncryptedVaultKey
 	}
 
 	return decryptedVaultKey, auth
+}
+
+func EncryptSecretData(secretName, secretText string, vaultKey []byte) ([2]string, [2]string) {
+	encryptedSecretName, nonceSecretName, err := encryptAESGCM([]byte(secretName), vaultKey)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+	}
+	encryptedSecretText, nonceSecretText, err := encryptAESGCM([]byte(secretText), vaultKey)
+	if err != nil {
+		log.Fatal(err)
+		os.Exit(1)
+
+	}
+
+	encodedEncryptedSecretName := base64.StdEncoding.EncodeToString(encryptedSecretName)
+	encodedNonceSecretName := base64.StdEncoding.EncodeToString(nonceSecretName)
+	encodedEncryptedSecretText := base64.StdEncoding.EncodeToString(encryptedSecretText)
+	encodedNonceSecretText := base64.StdEncoding.EncodeToString(nonceSecretText)
+
+	// [2]{cipher, nonce}
+	return [2]string{encodedEncryptedSecretName, encodedNonceSecretName}, [2]string{encodedEncryptedSecretText, encodedNonceSecretText}
+}
+
+func DecryptSecretData(encodedEncryptedName, encodedEncryptedText [2]string, vaultKey []byte) (string, string) {
+	encodedEncryptedSecretName, encodedNonceSecretName := encodedEncryptedName[0], encodedEncryptedName[1]
+	encodedEncryptedSecretText, encodedNonceSecretText := encodedEncryptedText[0], encodedEncryptedText[1]
+
+	decodedEncryptedSecretName, _ := base64.StdEncoding.DecodeString(encodedEncryptedSecretName)
+	decodedNonceSecretName, _ := base64.StdEncoding.DecodeString(encodedNonceSecretName)
+	decodedEncryptedSecretText, _ := base64.StdEncoding.DecodeString(encodedEncryptedSecretText)
+	decodedNonceSecretText, _ := base64.StdEncoding.DecodeString(encodedNonceSecretText)
+
+	decryptedSecretName, err := decryptAESGCM(decodedEncryptedSecretName, vaultKey, decodedNonceSecretName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	decryptedSecretText, err := decryptAESGCM(decodedEncryptedSecretText, vaultKey, decodedNonceSecretText)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return string(decryptedSecretName[:]), string(decryptedSecretText[:])
 }
 
 func encryptAESGCM(plaintext, key []byte) (ciphertext, nonce []byte, err error) {
@@ -88,4 +142,13 @@ func decryptAESGCM(ciphertext, key, nonce []byte) (plaintext []byte, err error) 
 
 	plaintext, err = gcm.Open(nil, nonce, ciphertext, nil)
 	return plaintext, err
+}
+
+func generateVaultKey() ([]byte, error) {
+	key := make([]byte, 32) // 32 bytes for AES-256
+	_, err := rand.Read(key)
+	if err != nil {
+		return nil, err
+	}
+	return key, nil
 }

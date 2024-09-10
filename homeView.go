@@ -15,16 +15,17 @@ type keyMapHome struct {
 	Up    key.Binding
 	Down  key.Binding
 	Quit  key.Binding
+	Help  key.Binding
 	Enter key.Binding
 }
 
 func (k keyMapHome) ShortHelp() []key.Binding {
-	return nil
+	return []key.Binding{k.Help, k.Quit}
 }
 func (k keyMapHome) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down},
-		{k.Quit, k.Enter},
+		{k.Quit, k.Enter, k.Help},
 	}
 }
 
@@ -40,6 +41,10 @@ var keysHome = keyMapHome{
 	Quit: key.NewBinding(
 		key.WithKeys("esc", "ctrl+c"),
 		key.WithHelp("esc/ctrl+c", "quit program"),
+	),
+	Help: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "toggle help"),
 	),
 	Enter: key.NewBinding(
 		key.WithKeys("enter", " "),
@@ -63,7 +68,6 @@ func InitialHomeModel(mainmdl *mainModel) HomeModel {
 		help:      help.New(),
 		mainModel: mainmdl,
 	}
-	m.help.ShowAll = true
 	return m
 }
 
@@ -98,6 +102,8 @@ func (m HomeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
+		case key.Matches(msg, m.keys.Help):
+			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, m.keys.Down):
 			if m.cursor < len(m.choices)-1 {
 				m.cursor++
@@ -118,6 +124,7 @@ func (m HomeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.w = msg.Width
 		m.h = msg.Height
+		m.help.Width = msg.Width
 	}
 	return m, nil
 }

@@ -96,6 +96,7 @@ func (m TemplateModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.w = msg.Width
 		m.h = msg.Height
+		m.help.Width = msg.Width
 	}
 	return m, nil
 }

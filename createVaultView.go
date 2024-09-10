@@ -19,17 +19,18 @@ type keyMapCreateVault struct {
 	Up     key.Binding
 	Down   key.Binding
 	Quit   key.Binding
+	Help   key.Binding
 	Create key.Binding
 	Back   key.Binding
 }
 
 func (k keyMapCreateVault) ShortHelp() []key.Binding {
-	return nil
+	return []key.Binding{k.Help, k.Quit}
 }
 func (k keyMapCreateVault) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Back},
-		{k.Quit, k.Create},
+		{k.Quit, k.Create, k.Help},
 	}
 }
 
@@ -45,6 +46,10 @@ var keysCreateVault = keyMapCreateVault{
 	Quit: key.NewBinding(
 		key.WithKeys("esc", "ctrl+c"),
 		key.WithHelp("esc/ctrl+c", "quit program"),
+	),
+	Help: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "toggle help"),
 	),
 	Create: key.NewBinding(
 		key.WithKeys("enter"),
@@ -80,7 +85,6 @@ func InitialCreateVaultModel(mainMdl *mainModel) CreateVaultModel {
 		help:      help.New(),
 		mainModel: mainMdl,
 		inputs:    make([]textinput.Model, 4)}
-	m.help.ShowAll = true
 
 	var t textinput.Model
 	for i := range m.inputs {
@@ -150,7 +154,8 @@ func (m CreateVaultModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, m.keys.Quit):
 			return m, tea.Quit
-
+		case key.Matches(msg, m.keys.Help):
+			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, m.keys.Back):
 			m.mainModel.viewState = homeView
 			return m.mainModel, tea.WindowSize()
@@ -194,6 +199,7 @@ func (m CreateVaultModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.w = msg.Width
 		m.h = msg.Height
+		m.help.Width = msg.Width
 	}
 
 	// Handle character input and blinking
@@ -223,8 +229,9 @@ type Vault struct {
 }
 
 type Secret struct {
-	EncodedEncryptedText string // password or any secret data
-	EncodedEncryptedName string // name of the secret
+	// array contains encryptedEncoded plaintext, and encodedNonce
+	EncodedEncryptedText [2]string // password or any secret data
+	EncodedEncryptedName [2]string // name of the secret
 }
 
 func (m CreateVaultModel) handleCreate() (tea.Model, tea.Cmd) {
@@ -240,7 +247,7 @@ func (m CreateVaultModel) handleCreate() (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	key, salt, nonce := CreateAndEncryptVaultKey(m.inputs[3].Value(), m.inputs[name].Value())
+	key, salt, nonce := CreateAndEncryptVaultKey(m.inputs[3].Value())
 
 	newVault := Vault{
 		Name:                     m.inputs[name].Value(),
