@@ -38,12 +38,12 @@ func (k keyMapCreateSecret) FullHelp() [][]key.Binding {
 
 var keysTemplate = keyMapCreateSecret{
 	Up: key.NewBinding(
-		key.WithKeys("up", "k"),
-		key.WithHelp("↑/k", "move up"),
+		key.WithKeys("up"),
+		key.WithHelp("↑", "move up"),
 	),
 	Down: key.NewBinding(
-		key.WithKeys("down", "j"),
-		key.WithHelp("↓/j", "move down"),
+		key.WithKeys("down"),
+		key.WithHelp("↓", "move down"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("esc", "ctrl+c"),
@@ -54,8 +54,8 @@ var keysTemplate = keyMapCreateSecret{
 		key.WithHelp("?", "toggle help"),
 	),
 	Enter: key.NewBinding(
-		key.WithKeys("enter", " "),
-		key.WithHelp("enter/space", "enter"),
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "enter"),
 	),
 	Back: key.NewBinding(
 		key.WithKeys("left"),
