@@ -35,12 +35,12 @@ func (k keyMapVaults) FullHelp() [][]key.Binding {
 
 var keysVaults = keyMapVaults{
 	Up: key.NewBinding(
-		key.WithKeys("up", "k"),
-		key.WithHelp("↑/k", "move up"),
+		key.WithKeys("up"),
+		key.WithHelp("↑", "move up"),
 	),
 	Down: key.NewBinding(
-		key.WithKeys("down", "j"),
-		key.WithHelp("↓/j", "move down"),
+		key.WithKeys("down"),
+		key.WithHelp("↓", "move down"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("esc", "ctrl+c"),
@@ -51,8 +51,8 @@ var keysVaults = keyMapVaults{
 		key.WithHelp("?", "toggle help"),
 	),
 	Enter: key.NewBinding(
-		key.WithKeys("enter", " "),
-		key.WithHelp("enter/space", "enter"),
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "enter"),
 	),
 	Back: key.NewBinding(
 		key.WithKeys("left"),
@@ -94,7 +94,7 @@ func (m VaultsModel) Init() tea.Cmd {
 
 func (m VaultsModel) View() string {
 	s := ""
-	s += titleStyle.Render(fmt.Sprintf("Vaults that %s created", highlightStyle.Render("you've")))
+	s += titleStyle.Render(fmt.Sprintf("Vaults that you've %s", highlightStyle.Render("created.")))
 	s += "\n"
 
 	// rendering vaults list

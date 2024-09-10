@@ -88,7 +88,7 @@ func (m VaultModel) Init() tea.Cmd {
 
 func (m VaultModel) View() string {
 	s := ""
-	s += titleStyle.Render(fmt.Sprintf("Viewing %s.", highlightStyle.Render(m.vault.Name)))
+	s += titleStyle.Render(fmt.Sprintf("Vault: %s", highlightStyle.Render(m.vault.Name)))
 	s += "\n"
 
 	if len(m.vault.Secrets) == 0 {
