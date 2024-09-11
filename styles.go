@@ -8,7 +8,8 @@ const (
 	secondaryFg        = "#6C6C6C"
 	primaryHighlight   = "#B5F5F8"
 	secondaryHighlight = "#7FBDD7"
-	primaryError       = "#FE5F55"
+	err                = "#FE5F55"
+	confirm            = "#70C1B3"
 )
 
 var (
@@ -18,11 +19,12 @@ var (
 	choicesFocusedStyle = lg.NewStyle().Bold(true).Foreground(lg.Color(secondaryHighlight))
 	helpStyle           = lg.NewStyle().AlignHorizontal(lg.Center).MarginTop(1)
 
-	errorStyle      = lg.NewStyle().Bold(true).Foreground(lg.Color(primaryError))
-	focusedStyle    = lg.NewStyle().Foreground(lg.Color(primaryHighlight))
-	cursorStyle     = focusedStyle
-	noStyle         = lg.NewStyle()
-	formBorderStyle = lg.NewStyle().Border(lg.RoundedBorder()).Padding(1)
+	errorStyle        = lg.NewStyle().Bold(true).Foreground(lg.Color(err))
+	confirmationStyle = lg.NewStyle().Foreground(lg.Color(confirm))
+	focusedStyle      = lg.NewStyle().Foreground(lg.Color(primaryHighlight))
+	cursorStyle       = focusedStyle
+	noStyle           = lg.NewStyle()
+	formBorderStyle   = lg.NewStyle().Border(lg.RoundedBorder()).Padding(1)
 
 	listStyle                = lg.NewStyle().Width(20)
 	listItemStyle            = lg.NewStyle().Border(lg.NormalBorder(), false, false, false, true).MarginTop(1).PaddingLeft(1)

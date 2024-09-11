@@ -56,6 +56,9 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case enterVaultView:
 		model, cmd := m.enterVaultView.Update(msg)
 		return model, cmd
+	case vaultView:
+		model, cmd := m.vaultView.Update(msg)
+		return model, cmd
 	case createSecretView:
 		model, cmd := m.createSecretView.Update(msg)
 		return model, cmd
@@ -73,6 +76,8 @@ func (m mainModel) View() string {
 		return m.createVaultView.View()
 	case enterVaultView:
 		return m.enterVaultView.View()
+	case vaultView:
+		return m.vaultView.View()
 	case createSecretView:
 		return m.createSecretView.View()
 	}

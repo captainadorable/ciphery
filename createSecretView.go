@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -149,8 +148,8 @@ func (m CreateSecretModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.Help):
 			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, m.keys.Back):
-			m.mainModel.viewState = vaultsView
-			return m.mainModel.vaultsView, tea.WindowSize()
+			m.mainModel.viewState = vaultView
+			return m.mainModel.vaultView, tea.Batch(tea.WindowSize(), SendVaultCmd(m.vault), SendDecryptedVaultKeyCmd(m.decryptedVaultKey))
 		case key.Matches(msg, m.keys.Enter):
 			return m.handleCreate()
 		case key.Matches(msg, m.keys.Up) || key.Matches(msg, m.keys.Down):
@@ -244,17 +243,17 @@ func (m CreateSecretModel) handleCreate() (tea.Model, tea.Cmd) {
 	// Write the json
 	updateVaultByte, err := json.Marshal(m.vault)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		m.errorMsg = fmt.Sprintf("Error creating secret: %v", err)
+		return m, nil
 	}
 	err = os.WriteFile(fmt.Sprintf("%s%s.json", VAULTSPATH, m.vault.Name), updateVaultByte, 0644)
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		m.errorMsg = fmt.Sprintf("Error creating secret: %v", err)
+		return m, nil
 	}
 
 	// Reset the view
 	m.mainModel.createSecretView = InitialCreateSecretModel(m.mainModel)
 
-	return m.mainModel.homeView, tea.WindowSize()
+	return m.mainModel.vaultView, tea.Batch(tea.WindowSize(), SendVaultCmd(m.vault), SendDecryptedVaultKeyCmd(m.decryptedVaultKey))
 }
