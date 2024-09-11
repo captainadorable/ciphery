@@ -105,7 +105,7 @@ func InitialCreateSecretModel(mainmdl *mainModel) CreateSecretModel {
 			t.Placeholder = "Secret text"
 			t.PromptStyle = focusedStyle
 			t.TextStyle = focusedStyle
-			t.CharLimit = 64
+			t.CharLimit = 128
 		}
 		m.inputs[i] = t
 	}
@@ -214,12 +214,23 @@ func (m *CreateSecretModel) updateInputs(msg tea.Msg) tea.Cmd {
 }
 
 func (m CreateSecretModel) handleCreate() (tea.Model, tea.Cmd) {
+	// Check for empty fields
 	for i := range m.inputs {
 		if len(m.inputs[i].Value()) == 0 {
 			m.errorMsg = fmt.Sprintf("[%s] option can't be empty!", m.inputs[i].Placeholder)
 			return m, nil
 		}
 	}
+	// Check for special characters
+	if strings.ContainsAny(m.inputs[secretName].Value(), "/\\") {
+		m.errorMsg = fmt.Sprintf("[%s] option can't contain special characters!", m.inputs[secretName].Placeholder)
+		return m, nil
+	}
+	if strings.ContainsAny(m.inputs[secretText].Value(), "/\\") {
+		m.errorMsg = fmt.Sprintf("[%s] option can't contain special characters!", m.inputs[secretText].Placeholder)
+		return m, nil
+	}
+
 	// Encrypt the data
 	cryptedName, cryptedText := EncryptSecretData(m.inputs[secretName].Value(), m.inputs[secretText].Value(), m.decryptedVaultKey)
 	newSecret := Secret{

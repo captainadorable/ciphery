@@ -90,23 +90,26 @@ func InitialCreateVaultModel(mainMdl *mainModel) CreateVaultModel {
 	for i := range m.inputs {
 		t = textinput.New()
 		t.Cursor.Style = cursorStyle
-		t.CharLimit = 16
 
 		switch i {
 		case name:
 			t.Placeholder = "Vault name"
 			t.Focus()
 			t.PromptStyle = focusedStyle
+			t.CharLimit = 16
 			t.TextStyle = focusedStyle
 		case description:
 			t.Placeholder = "Description"
+			t.CharLimit = 64
 		case password:
 			t.Placeholder = "Password"
 			t.EchoMode = textinput.EchoPassword
+			t.CharLimit = 32
 			t.EchoCharacter = '•'
 		case rePassword:
 			t.Placeholder = "Re-enter password"
 			t.EchoMode = textinput.EchoPassword
+			t.CharLimit = 32
 			t.EchoCharacter = '•'
 		}
 
@@ -235,15 +238,9 @@ type Secret struct {
 }
 
 func (m CreateVaultModel) handleCreate() (tea.Model, tea.Cmd) {
-	for i := range m.inputs {
-		if len(m.inputs[i].Value()) == 0 {
-			m.errorMsg = fmt.Sprintf("[%s] option can't be empty!", m.inputs[i].Placeholder)
-			return m, nil
-		}
-	}
-
-	if m.inputs[password].Value() != m.inputs[rePassword].Value() {
-		m.errorMsg = "Passwords doesn't match!"
+	ok, errMsg := CreateVaultValidation(m.inputs)
+	if !ok {
+		m.errorMsg = errMsg
 		return m, nil
 	}
 
@@ -271,4 +268,44 @@ func (m CreateVaultModel) handleCreate() (tea.Model, tea.Cmd) {
 
 	m.mainModel.viewState = homeView
 	return m.mainModel, tea.WindowSize()
+}
+
+func CreateVaultValidation(inputs []textinput.Model) (bool, string) {
+	// Form validation
+	// if it doesnt validate return false and set error message
+	// Vault name cant contain spaces or special characters it's going to be used as a file name
+	errorMsg := ""
+	for i := range inputs {
+		if len(inputs[i].Value()) == 0 {
+			errorMsg = fmt.Sprintf("[%s] option can't be empty!", inputs[i].Placeholder)
+			return false, errorMsg
+		}
+	}
+
+	//  Trim whitespace from the beginning and end of input
+	for i := range inputs {
+		inputs[i].SetValue(strings.TrimSpace(inputs[i].Value()))
+	}
+
+	if _, err := os.Stat(fmt.Sprintf("%s%s.json", VAULTSPATH, inputs[name].Value())); err == nil {
+		errorMsg = "Vault with that name already exists!"
+	} else if len(inputs[password].Value()) < 8 {
+		errorMsg = "Password must be at least 8 characters long!"
+	} else if strings.ContainsAny(inputs[name].Value(), "/\\") {
+		errorMsg = "Vault name can't contain special characters!"
+	} else if strings.ContainsAny(inputs[name].Value(), " ") {
+		errorMsg = "Vault name can't contain spaces!"
+	} else if strings.ContainsAny(inputs[description].Value(), "/\\") {
+		errorMsg = "Description can't contain special characters!"
+	} else if strings.ContainsAny(inputs[password].Value(), "/\\") {
+		errorMsg = "Password can't contain special characters!"
+	} else if strings.ContainsAny(inputs[password].Value(), " ") {
+		errorMsg = "Password can't contain spaces!"
+	} else if inputs[password].Value() != inputs[rePassword].Value() {
+		errorMsg = "Passwords don't match!"
+	} else {
+		errorMsg = ""
+		return true, errorMsg
+	}
+	return false, errorMsg
 }
