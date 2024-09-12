@@ -15,12 +15,13 @@ import (
 
 // keyMap defines a set of keybindings. To work for help it must satisfy
 type keyMapVaults struct {
-	Up    key.Binding
-	Down  key.Binding
-	Quit  key.Binding
-	Help  key.Binding
-	Enter key.Binding
-	Back  key.Binding
+	Up     key.Binding
+	Down   key.Binding
+	Quit   key.Binding
+	Help   key.Binding
+	Enter  key.Binding
+	Back   key.Binding
+	Delete key.Binding
 }
 
 func (k keyMapVaults) ShortHelp() []key.Binding {
@@ -30,6 +31,7 @@ func (k keyMapVaults) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down},
 		{k.Quit, k.Enter, k.Back, k.Help},
+		{k.Delete},
 	}
 }
 
@@ -58,15 +60,21 @@ var keysVaults = keyMapVaults{
 		key.WithKeys("left"),
 		key.WithHelp("←", "go back"),
 	),
+	Delete: key.NewBinding(
+		key.WithKeys("d"),
+		key.WithHelp("d", "delete secret"),
+	),
 }
 
 type VaultsModel struct {
-	keys      keyMapVaults
-	help      help.Model
-	cursor    int
-	w, h      int
-	vaults    []Vault
-	mainModel *mainModel
+	keys            keyMapVaults
+	help            help.Model
+	cursor          int
+	w, h            int
+	vaults          []Vault
+	errorMsg        string
+	confirmationMsg string
+	mainModel       *mainModel
 }
 
 func InitialVaultsModel(mainMdl *mainModel) VaultsModel {
@@ -114,14 +122,15 @@ func (m VaultsModel) View() string {
 		s += listStyle.Render(v)
 		s += "\n"
 	}
-
+	s += errorStyle.Render(fmt.Sprintf("%s\n", m.errorMsg))
+	s += confirmationStyle.Render(fmt.Sprintf("%s\n", m.confirmationMsg))
 	helpView := m.help.View(m.keys)
 	s += helpStyle.Render(helpView)
 	s = lg.Place(m.w, m.h, lg.Center, lg.Center, s)
 	return s
 }
 
-// Sending selected vault to the enterVaultView
+// Sending selected vault to the enterVaultView.
 type SendVaultMsg struct {
 	VaultSended Vault
 }
@@ -144,6 +153,8 @@ func (m VaultsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.vaults)-1 {
 				m.cursor++
 			}
+		case key.Matches(msg, m.keys.Delete):
+			return m.handleDelete()
 		case key.Matches(msg, m.keys.Up):
 			if m.cursor > 0 {
 				m.cursor--
@@ -194,4 +205,16 @@ func (m VaultsModel) GetVaults() []Vault {
 		}
 	}
 	return vaults
+}
+func (m VaultsModel) handleDelete() (tea.Model, tea.Cmd) {
+	err := os.Remove(fmt.Sprintf("%s%s.json", VAULTSPATH, m.vaults[m.cursor].Name))
+	if err != nil {
+		m.errorMsg = fmt.Sprintf("Error deleting vault: %v", err)
+	} else {
+		m.errorMsg = ""
+		m.confirmationMsg = fmt.Sprintf("Vault %s deleted successfully", m.vaults[m.cursor].Name)
+	}
+
+	m.vaults = append(m.vaults[:m.cursor], m.vaults[m.cursor+1:]...)
+	return m, nil
 }

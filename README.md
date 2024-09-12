@@ -8,22 +8,20 @@ You can change color scheme from **_styles.go_**
 ## Features
 
 - 🔑 Key binds to navigate.
-- 🗄️ Create and view **vaults**.
-- 🔒 Create and view **secrets**.
+- 🗄️ Create, delete and view **vaults**.
+- 🔒 Create, delete and view **secrets**.
 - 🔐 The **encrypted data** store in a **JSON** file.
 
 ## Planned features
 
-- 🗑️ Delete **vaults**.
-- 🗑️ Delete **secrets**.
 - 📂 Custom path for **vaults** folder.
 - 🔒 Advanced **secrets**.
 - 📋 Copy to clipboard.
-- 🔧 Password generator.
+- 🔧 Password generator
 
 ## 🐞 Bugs that I'm aware of
 
-- After creating a new secret, the app returns to the home view instead of the vault view.
+- 💪🏿💪🏿💪🏿😨
 
 ## 🚀 Building
 
