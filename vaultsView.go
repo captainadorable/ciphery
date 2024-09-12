@@ -13,61 +13,8 @@ import (
 	lg "github.com/charmbracelet/lipgloss"
 )
 
-// keyMap defines a set of keybindings. To work for help it must satisfy
-type keyMapVaults struct {
-	Up     key.Binding
-	Down   key.Binding
-	Quit   key.Binding
-	Help   key.Binding
-	Enter  key.Binding
-	Back   key.Binding
-	Delete key.Binding
-}
-
-func (k keyMapVaults) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit}
-}
-func (k keyMapVaults) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.Up, k.Down},
-		{k.Quit, k.Enter, k.Back, k.Help},
-		{k.Delete},
-	}
-}
-
-var keysVaults = keyMapVaults{
-	Up: key.NewBinding(
-		key.WithKeys("up"),
-		key.WithHelp("↑", "move up"),
-	),
-	Down: key.NewBinding(
-		key.WithKeys("down"),
-		key.WithHelp("↓", "move down"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("esc", "ctrl+c"),
-		key.WithHelp("esc/ctrl+c", "quit program"),
-	),
-	Help: key.NewBinding(
-		key.WithKeys("?"),
-		key.WithHelp("?", "toggle help"),
-	),
-	Enter: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("enter", "enter"),
-	),
-	Back: key.NewBinding(
-		key.WithKeys("left"),
-		key.WithHelp("←", "go back"),
-	),
-	Delete: key.NewBinding(
-		key.WithKeys("d"),
-		key.WithHelp("d", "delete secret"),
-	),
-}
-
 type VaultsModel struct {
-	keys            keyMapVaults
+	keys            keyMap
 	help            help.Model
 	cursor          int
 	w, h            int
@@ -106,10 +53,7 @@ func (m VaultsModel) View() string {
 	s += "\n"
 
 	// rendering vaults list
-	if len(m.vaults) == 0 {
-		s += errorStyle.Render("There is no vaults created. Go back and create one!")
-		s += "\n"
-	} else {
+	if len(m.vaults) > 0 {
 		v := ""
 		for i, vault := range m.vaults {
 			style := listItemStyle
@@ -122,8 +66,11 @@ func (m VaultsModel) View() string {
 		s += listStyle.Render(v)
 		s += "\n"
 	}
-	s += errorStyle.Render(fmt.Sprintf("%s\n", m.errorMsg))
-	s += confirmationStyle.Render(fmt.Sprintf("%s\n", m.confirmationMsg))
+	s += errorStyle.Render(m.errorMsg)
+	s += "\n"
+	s += confirmationStyle.Render(m.confirmationMsg)
+	s += "\n"
+
 	helpView := m.help.View(m.keys)
 	s += helpStyle.Render(helpView)
 	s = lg.Place(m.w, m.h, lg.Center, lg.Center, s)
@@ -163,12 +110,21 @@ func (m VaultsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.mainModel.viewState = homeView
 			return m.mainModel.homeView, tea.WindowSize()
 		case key.Matches(msg, m.keys.Enter):
+			if len(m.vaults) == 0 {
+				m.errorMsg = "There is no vaults created. Go back and create one!"
+				return m, nil
+			}
 			m.mainModel.viewState = enterVaultView
 			return m.mainModel.enterVaultView, tea.Batch(tea.WindowSize(), m.mainModel.enterVaultView.Init(), SendVaultCmd(m.vaults[m.cursor]))
 		}
 
 	case UpdateVaultsMsg:
 		m.vaults = msg.Vaults
+		if len(m.vaults) == 0 {
+			m.errorMsg = "There is no vaults created. Go back and create one!"
+		} else {
+			m.errorMsg = ""
+		}
 	case tea.WindowSizeMsg:
 		m.w = msg.Width
 		m.h = msg.Height
@@ -216,5 +172,9 @@ func (m VaultsModel) handleDelete() (tea.Model, tea.Cmd) {
 	}
 
 	m.vaults = append(m.vaults[:m.cursor], m.vaults[m.cursor+1:]...)
+
+	if len(m.vaults) == 0 {
+		m.errorMsg = "There is no vaults created. Go back and create one!"
+	}
 	return m, nil
 }

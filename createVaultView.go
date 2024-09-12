@@ -14,55 +14,8 @@ import (
 	lg "github.com/charmbracelet/lipgloss"
 )
 
-// keyMap defines a set of keybindings. To work for help it must satisfy
-type keyMapCreateVault struct {
-	Up     key.Binding
-	Down   key.Binding
-	Quit   key.Binding
-	Help   key.Binding
-	Create key.Binding
-	Back   key.Binding
-}
-
-func (k keyMapCreateVault) ShortHelp() []key.Binding {
-	return []key.Binding{k.Help, k.Quit}
-}
-func (k keyMapCreateVault) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.Up, k.Down, k.Back},
-		{k.Quit, k.Create, k.Help},
-	}
-}
-
-var keysCreateVault = keyMapCreateVault{
-	Up: key.NewBinding(
-		key.WithKeys("up"),
-		key.WithHelp("↑", "move up"),
-	),
-	Down: key.NewBinding(
-		key.WithKeys("down"),
-		key.WithHelp("↓", "move down"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("esc", "ctrl+c"),
-		key.WithHelp("esc/ctrl+c", "quit program"),
-	),
-	Help: key.NewBinding(
-		key.WithKeys("?"),
-		key.WithHelp("?", "toggle help"),
-	),
-	Create: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("enter", "create vault"),
-	),
-	Back: key.NewBinding(
-		key.WithKeys("left"),
-		key.WithHelp("←", "go back"),
-	),
-}
-
 type CreateVaultModel struct {
-	keys      keyMapCreateVault
+	keys      keyMap
 	help      help.Model
 	w, h      int
 	mainModel *mainModel
@@ -163,7 +116,7 @@ func (m CreateVaultModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.mainModel.viewState = homeView
 			return m.mainModel, tea.WindowSize()
 
-		case key.Matches(msg, m.keys.Create):
+		case key.Matches(msg, m.keys.Enter):
 			// Create vault
 			return m.handleCreate()
 
